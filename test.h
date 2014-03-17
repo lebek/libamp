@@ -11,3 +11,4 @@ Suite *make_list_suite(void);
 Suite *make_table_suite(void);
 Suite *make_mem_suite(void);
 Suite *make_buftoll_suite(void);
+Suite *make_ampc_suite(void);

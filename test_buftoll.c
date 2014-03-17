@@ -34,6 +34,18 @@ START_TEST(test_buftoll_no_digits)
 }
 END_TEST
 
+START_TEST(test__buftoll_range__error)
+{
+    int result;
+    int err = -1;
+
+    result = buftoll_range("1X3", 3, -10, 10, &err);
+
+    fail_unless(result == 0);
+    fail_unless(err == AMP_DECODE_ERROR);
+}
+END_TEST
+
 
 Suite *make_buftoll_suite(void)
 {
@@ -43,6 +55,7 @@ Suite *make_buftoll_suite(void)
 
     tcase_add_test(tc_buftoll, test_buftoll_invalid_size);
     tcase_add_test(tc_buftoll, test_buftoll_no_digits);
+    tcase_add_test(tc_buftoll, test__buftoll_range__error);
 
     suite_add_tcase(s, tc_buftoll);
     return s;

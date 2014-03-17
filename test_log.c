@@ -36,7 +36,7 @@ START_TEST(test__amp_log__stderr)
 END_TEST
 
 
-List_T logged_messages = NULL;
+List_T *logged_messages = NULL;
 
 void test_logger(char *msg)
 {

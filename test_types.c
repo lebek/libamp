@@ -61,7 +61,7 @@ START_TEST(test__amp_put_long_long)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct put_ll_case c = put_ll_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     debug_print("Testing %lld encodes to \"%s\"...\n",
                 c.testValue, c.expectedResult);
@@ -146,7 +146,7 @@ START_TEST(test__amp_get_long_long)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_ll_case c = get_ll_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     if (c.expectedError) {
         debug_print("Testing \"%s\" fails decode with error %d.\n",
@@ -184,7 +184,7 @@ START_TEST(test__amp_get_long_long__no_such_key)
 {
     int ret;
     long long got;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     ret = amp_get_long_long(box, "missing_key", &got);
 
@@ -222,7 +222,7 @@ START_TEST(test__amp_put_int)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct put_int_case c = put_int_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     debug_print("Testing %d encodes to \"%s\"...\n",
                 c.testValue, c.expectedResult);
@@ -292,7 +292,7 @@ START_TEST(test__amp_get_int)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_int_case c = get_int_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     if (c.expectedError)
     {
@@ -359,7 +359,7 @@ START_TEST(test__amp_get_uint)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_uint_case c = get_uint_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     if (c.expectedError)
     {
@@ -419,7 +419,7 @@ START_TEST(test__amp_put_uint)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct put_uint_case c = put_uint_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     debug_print("Testing %d encodes to \"%s\"...\n",
                 c.testValue, c.expectedResult);
@@ -458,7 +458,7 @@ START_TEST(test__amp_get_uint__no_such_key)
 {
     int ret;
     int got;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     ret = amp_get_uint(box, "missing_key", &got);
 
@@ -500,7 +500,7 @@ START_TEST(test__amp_put_double)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct put_double_case c = put_double_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     debug_print("Testing %.20f encoding startswith \"%s\"...\n",
                 c.testValue, c.resultStartsWith);
@@ -581,7 +581,7 @@ START_TEST(test__amp_get_double__normal)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_double_case c = get_double_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     if (c.expectedError)
     {
@@ -651,7 +651,7 @@ START_TEST(test__amp_get_double__special)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_double_special_case c = get_double_special_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
 
     debug_print("Testing \"%s\" decoding...\n", c.testValue);
@@ -693,7 +693,7 @@ START_TEST(test__amp_get_double__no_such_key)
 {
     int ret;
     double got;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     ret = amp_get_double(box, "missing_key", &got);
 
@@ -725,7 +725,7 @@ START_TEST(test__amp_put_bool)
 
     struct put_bool_case c = put_bool_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     debug_print("Testing %d encodes to \"%s\"...\n",
                 c.testValue, c.expectedResult);
@@ -779,7 +779,7 @@ START_TEST(test__amp_get_bool)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_bool_case c = get_bool_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     if (c.expectedError)
     {
@@ -818,7 +818,7 @@ START_TEST(test__amp_get_bool__no_such_key)
 {
     int ret;
     int got;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     ret = amp_get_bool(box, "missing_key", &got);
 
@@ -829,10 +829,10 @@ START_TEST(test__amp_get_bool__no_such_key)
 END_TEST
 
 
-/* AMP_DateTime test cases */
+/* AMP_DateTime_T test cases */
 struct put_dt_case {
     int expectedError;
-    AMP_DateTime testValue;
+    AMP_DateTime_T testValue;
     char *expectedResult;
 } put_dt_cases[] = {
       /* year  mon day hour min sec msec    utc_offset */
@@ -896,7 +896,7 @@ START_TEST(test__amp_put_datetime)
     /* the variable _i is made available by Check's "loop test" machinery */
     struct put_dt_case c = put_dt_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     ret = amp_put_datetime(box, "key", &(c.testValue));
 
@@ -924,11 +924,11 @@ START_TEST(test__amp_put_datetime)
 END_TEST
 
 
-/* AMP_DateTime test cases */
+/* AMP_DateTime_T test cases */
 struct get_dt_case {
     int expectedError;
     char *testValue;
-    AMP_DateTime expectedResult;
+    AMP_DateTime_T expectedResult;
 } get_dt_cases[] = {
 
     /* one byte too long */
@@ -987,14 +987,14 @@ int num_get_dt_tests = (sizeof get_dt_cases /
 START_TEST(test__amp_get_datetime)
 {
     int ret;
-    AMP_DateTime dt;
+    AMP_DateTime_T dt;
 
     memset(&dt, 0, sizeof(dt));
 
     /* the variable _i is made available by Check's "loop test" machinery */
     struct get_dt_case c = get_dt_cases[_i];
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T * box = amp_new_box();
 
     amp_put_cstring(box, "key", c.testValue);
 

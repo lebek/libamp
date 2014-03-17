@@ -85,10 +85,10 @@ struct AMP_Box
 };
 
 
-typedef Table_T _AMP_Callback_Map_p;
+typedef Table_T *_AMP_Callback_Map_p;
 
 
-typedef Table_T _AMP_Responder_Map_p;
+typedef Table_T *_AMP_Responder_Map_p;
 
 
 /* Represents our side of an AMP connection.
@@ -145,52 +145,52 @@ struct AMP_Proto
     _AMP_Responder_Map_p responders;
 
     /* The "current" AMP box being parsed. */
-    AMP_Box_p box;
+    AMP_Box_T *box;
 };
 
 
-int _amp_get_buf(AMP_Box_p box, const char *key,
+int _amp_get_buf(AMP_Box_T *box, const char *key,
                  unsigned char **buf, int *size);
 
 
-int _amp_put_buf(AMP_Box_p box, const char *key,
+int _amp_put_buf(AMP_Box_T *box, const char *key,
                  const unsigned char *buf, int buf_size);
 
 
 /* Allocate a new AMP_Chunk with room to hold `size' bytes of data
  * and a terminating NULL byte. */
-AMP_Chunk_p amp_new_chunk(int size);
+AMP_Chunk_T *amp_new_chunk(int size);
 
 
 /* Free the AMP_Chunk. if chunk->value points to a buffer outside
  * of the space allocated for the AMP_Chunk, it will not be
  * free'd */
-void amp_free_chunk(AMP_Chunk_p chunk);
+void amp_free_chunk(AMP_Chunk_T *chunk);
 
 
 /* Allocate a new AMP_Chunk which refers to an existing buffer of `size'
  * bytes. The existing buffer is not modified, so it may not be
  * NULL-terminated. The existing buffer is not free'd when the AMP_Chunk
  * is free'd. */
-AMP_Chunk_p amp_chunk_for_buffer(unsigned char *buf, int size);
+AMP_Chunk_T *amp_chunk_for_buffer(unsigned char *buf, int size);
 
 
 /* Allocate a new AMP_Chunk which copies the buffer passed in, and also
  * places a NULL byte at the end of the copied data. */
-AMP_Chunk_p amp_chunk_copy_buffer(unsigned char *buf, int size);
-int amp_chunks_equal(AMP_Chunk_p c1, AMP_Chunk_p c2);
+AMP_Chunk_T *amp_chunk_copy_buffer(unsigned char *buf, int size);
+int amp_chunks_equal(AMP_Chunk_T *c1, AMP_Chunk_T *c2);
 
 
-/* Free an AMP_Response_p */
-void amp_free_response(AMP_Response_p response);
+/* Free an AMP_Response_T **/
+void amp_free_response(AMP_Response_T *response);
 
 
-/* Free an AMP_Error_p */
-void amp_free_error(AMP_Error_p error);
+/* Free an AMP_Error_T * */
+void amp_free_error(AMP_Error_T *error);
 
 
 /* Serialize an AMP box into a newly-allocated buffer */
-int amp_serialize_box(AMP_Box_p box, unsigned char **buf, int *size);
+int amp_serialize_box(AMP_Box_T *box, unsigned char **buf, int *size);
 
 
 /* Log handler singleton used by all of libamp.

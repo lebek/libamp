@@ -4,6 +4,21 @@
  * See LICENSE.txt for details.
  */
 
+/* TODO
+ *
+ *  -  Add a benchmark test-case for encoding, and for decoding AMP packets
+ *     to/from memory buffers.
+ *
+ *     This will allow us to tweak and optimize the parser and encoder
+ *     routines, while having concrete feedback about the impact those
+ *     tweaks have.
+ *
+ *  - Optimize AMP-parser state machine. amp_parse_box() in amp.c
+ *    State-machine states (KEY_LEN_READ, etc) should be bit-wise flags
+ *    and testing for the flag should be a bitwise-AND operation, which
+ *    may be faster(?)
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -57,9 +72,9 @@ struct consume_case consume_cases[] = {
 int num_consume_tests = (sizeof(consume_cases) /
                          sizeof(struct consume_case));
 
-List_T saved_boxes = NULL;
+List_T *saved_boxes = NULL;
 
-static int save_box(AMP_Proto_p proto, AMP_Box_p box)
+static int save_box(AMP_Proto_T *proto, AMP_Box_T *box)
 {
     int err;
     saved_boxes = List_push(saved_boxes, box, &err);
@@ -68,19 +83,19 @@ static int save_box(AMP_Proto_p proto, AMP_Box_p box)
 
 /* A dispatch function that just returns a code */
 int dispatch_fail_code;
-static int dispatch_fail(AMP_Proto_p proto, AMP_Box_p box)
+static int dispatch_fail(AMP_Proto_T *proto, AMP_Box_T *box)
 {
     return dispatch_fail_code;
 }
 
-List_T saved_results = NULL;
+List_T *saved_results = NULL;
 struct saved_result
 {
-    AMP_Proto_p proto;
-    AMP_Result_p result;
+    AMP_Proto_T *proto;
+    AMP_Result_T *result;
     void *callback_arg;
 };
-void save_result_cb(AMP_Proto_p proto, AMP_Result_p result,
+void save_result_cb(AMP_Proto_T *proto, AMP_Result_T *result,
                     void *callback_arg)
 {
     int err;
@@ -93,27 +108,27 @@ void save_result_cb(AMP_Proto_p proto, AMP_Result_p result,
     saved_results = List_push(saved_results, r, &err);
 }
 
-void ignore_result_cb(AMP_Proto_p proto, AMP_Result_p result,
+void ignore_result_cb(AMP_Proto_T *proto, AMP_Result_T *result,
                       void *callback_arg)
 {
     amp_free_result(result);
 }
 
-int discarding_write_handler(AMP_Proto_p proto, unsigned char *buf,
+int discarding_write_handler(AMP_Proto_T *proto, unsigned char *buf,
                              int bufSize, void *write_arg)
 {
     free(buf);
     return 0;
 }
 
-List_T saved_writes = NULL;
+List_T *saved_writes = NULL;
 struct saved_write
 {
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     void *write_arg;
-    AMP_Chunk_p chunk;
+    AMP_Chunk_T *chunk;
 };
-int save_writes(AMP_Proto_p proto, unsigned char *buf, int bufSize,
+int save_writes(AMP_Proto_T *proto, unsigned char *buf, int bufSize,
                 void *write_arg)
 {
     int err;
@@ -127,7 +142,7 @@ int save_writes(AMP_Proto_p proto, unsigned char *buf, int bufSize,
     return 0;
 }
 
-AMP_Proto_p test_proto;
+AMP_Proto_T *test_proto;
 void core_setup ()
 {
     test_proto = amp_new_proto();
@@ -166,7 +181,7 @@ START_TEST(test__amp_consume_bytes)
     /* the variable _i is made available by Check's "loop test" machinery */
     unsigned char *buf;
     int bufSize;
-    AMP_Box_p gotBox;
+    AMP_Box_T *gotBox;
     struct consume_case c;
 
     c = consume_cases[_i];
@@ -216,7 +231,7 @@ START_TEST(test__amp_consume_bytes__multiple_boxes)
     unsigned char *buf;
     int bufSize;
     int blockSize = 0;
-    AMP_Box_p box, box2, box3;
+    AMP_Box_T *box, *box2, *box3;
 
     /* build buffer with 3 boxes in it */
 
@@ -260,9 +275,9 @@ START_TEST(test__amp_consume_bytes__multiple_boxes)
 
     /* feed to amp_consume_bytes() */
 
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
 
-    /* captured dispatched boxes in a List_T */
+    /* captured dispatched boxes in a List_T* */
     proto->dispatch_box = save_box;
 
     int idx;
@@ -304,7 +319,7 @@ START_TEST(test__amp_consume_bytes__multiple_boxes)
 
     saved_boxes = List_reverse(saved_boxes);
 
-    AMP_Box_p gotBox;
+    AMP_Box_T *gotBox;
 
     /* check box 1 - a _command box */
     saved_boxes = List_pop(saved_boxes, (void**)&gotBox);
@@ -331,7 +346,7 @@ END_TEST
 START_TEST(test__amp_consume_bytes__dispatch_failure)
 {
     int result;
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
 
     dispatch_fail_code = 77;
     proto->dispatch_box = dispatch_fail;
@@ -348,7 +363,7 @@ END_TEST
 
 START_TEST(test__amp_parse_box__invalid_state)
 {
-    /* If AMP_Proto_p->state is not a known value, parsing should fail with AMP_INTERNAL_ERROR.
+    /* If AMP_Proto_T *->state is not a known value, parsing should fail with AMP_INTERNAL_ERROR.
      * This should never happen, but it doesn't hurt to have test coverage for it */
     int result;
 
@@ -367,7 +382,7 @@ START_TEST(dispatch_handled_responses)
     /* XXX TODO test with multiple callbacks set, responses arriving
      * out of original order */
 
-    AMP_Box_p args, answer, test_box;
+    AMP_Box_T *args, *answer, *test_box;
     unsigned int askKey, askKey2, askKey3;
 
     args = amp_new_box();
@@ -449,16 +464,16 @@ START_TEST(dispatch_handled_responses)
 }
 END_TEST
 
-List_T saved_requests = NULL;
+List_T *saved_requests = NULL;
 
-static void sum_responder(AMP_Proto_p proto, AMP_Request_p request,
+static void sum_responder(AMP_Proto_T *proto, AMP_Request_T *request,
                                void *responder_arg)
 {
     int err;
     saved_requests = List_push(saved_requests, request, &err);
 }
 
-static void multiply_responder(AMP_Proto_p proto, AMP_Request_p request,
+static void multiply_responder(AMP_Proto_T *proto, AMP_Request_T *request,
                                     void *responder_arg)
 {
     int err;
@@ -468,7 +483,7 @@ static void multiply_responder(AMP_Proto_p proto, AMP_Request_p request,
 START_TEST(dispatch_handled_requests)
 {
     /* Verify that registered responders recieve their corresponding requests */
-    AMP_Box_p test_box;
+    AMP_Box_T *test_box;
     amp_add_responder(test_proto, "Sum", sum_responder, NULL);
     amp_add_responder(test_proto, "Multiply", multiply_responder, NULL);
 
@@ -487,7 +502,7 @@ START_TEST(dispatch_handled_requests)
 
     fail_unless(List_length(saved_requests) == 1);
 
-    AMP_Request_p sumRequest;
+    AMP_Request_T *sumRequest;
     saved_requests = List_pop(saved_requests, (void**)&sumRequest);
     fail_unless(sumRequest->args == test_box);
     amp_free_request(sumRequest);
@@ -514,9 +529,9 @@ START_TEST(unhandled_request_sends_error)
 {
     /* Verify that an incoming request (_command) box, with no
      * registered command handler, causes an error box to be sent. */
-    AMP_Box_p test_box;
-    AMP_Box_p box;
-    AMP_Proto_p proto;
+    AMP_Box_T *test_box;
+    AMP_Box_T *box;
+    AMP_Proto_T *proto;
     struct saved_write *write;
     int bytesConsumed;
     int writtenErrorKey;
@@ -634,7 +649,7 @@ END_TEST
 
 START_TEST(test_process_bad_box)
 {
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
 
     fail_unless(_amp_process_full_packet(NULL, box) == AMP_BOX_EMPTY);
     amp_free_box(box);
@@ -666,8 +681,8 @@ END_TEST
 START_TEST(_amp_new_error_from_box__error_cases)
 {
     int result;
-    AMP_Box_p box;
-    AMP_Error_p error = NULL;
+    AMP_Box_T *box;
+    AMP_Error_T *error = NULL;
 
     box = amp_new_box();
     amp_put_cstring(box, _ERROR, "1");
@@ -706,15 +721,15 @@ END_TEST
 START_TEST(_amp_new_request_from_box__error_cases)
 {
     int result;
-    AMP_Box_p box;
-    AMP_Request_p req = NULL;
+    AMP_Box_T *box;
+    AMP_Request_T *req = NULL;
 
     box = amp_new_box();
     amp_put_cstring(box, COMMAND, "SomeCommand");
     amp_put_cstring(box, ASK, "1");
 
-    /* all amp_get_* functions on this box, for the given key,
-     * will fail with this code */
+    /* TEST SUPPORT: rig all amp_get_* functions on this box,
+     * for the given key, to fail with this code. */
     box->get_fail_code = 77;
     box->get_fail_key = COMMAND;
 
@@ -761,7 +776,7 @@ START_TEST(test_free_proto)
 }
 END_TEST
 
-void junk_callback(AMP_Proto_p proto, AMP_Result_p result,
+void junk_callback(AMP_Proto_T *proto, AMP_Result_T *result,
                    void *callback_arg)
 {
     amp_free_result(result);
@@ -806,7 +821,7 @@ START_TEST(test_process_with_malloc_failure)
 
     /* ANSWER box */
     int ask_key = 1;
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     _AMP_Callback_p cb;
 
     fail_after = 0;
@@ -893,7 +908,7 @@ START_TEST(test_new_box_with_malloc_failures)
     /* test that amp_new_box() handles malloc() failures
      * gracefully */
     int fail_after = 0;
-    AMP_Box_p result;
+    AMP_Box_T *result;
 
     while (1)
     {
@@ -927,7 +942,7 @@ START_TEST(test_new_proto_with_malloc_failures)
     /* test that amp_new_proto() handles malloc() failures
      * gracefully */
     int fail_after = 0;
-    AMP_Proto_p result;
+    AMP_Proto_T *result;
 
     while (1)
     {
@@ -958,7 +973,7 @@ END_TEST
 
 START_TEST(test_parse_box_with_malloc_failures)
 {
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     int fail_after = 0;
     int bytesConsumed;
     int result;
@@ -1001,7 +1016,7 @@ END_TEST
 
 START_TEST(test_amp_call_with_malloc_failures)
 {
-    AMP_Box_p args;
+    AMP_Box_T *args;
     unsigned int ask_key;
     int fail_after = 0;
     int result;
@@ -1038,8 +1053,8 @@ END_TEST
 
 START_TEST(test_amp_cancel_with_malloc_failures)
 {
-    AMP_Box_p args;
-    AMP_Proto_p proto;
+    AMP_Box_T *args;
+    AMP_Proto_T *proto;
     unsigned int askKey;
     int fail_after = 0;
     int result;
@@ -1080,7 +1095,7 @@ END_TEST
 START_TEST(test_amp_chunks_with_malloc_failures)
 {
     int fail_after = 0;
-    AMP_Chunk_p result;
+    AMP_Chunk_T *result;
     unsigned char temp_buf[5];
 
     /* TEST amp_chunk_for_buffer() */
@@ -1137,9 +1152,9 @@ START_TEST(test_amp_respond_with_malloc_failures)
 {
     char *ask_key = "ask123";
 
-    AMP_Request_p req;
-    AMP_Proto_p proto = amp_new_proto();
-    AMP_Box_p resp_args = amp_new_box();
+    AMP_Request_T *req;
+    AMP_Proto_T *proto = amp_new_proto();
+    AMP_Box_T *resp_args = amp_new_box();
 
     int result;
     int fail_after = 0;
@@ -1190,8 +1205,8 @@ START_TEST(test_amp_new_error_from_box_with_malloc_failures)
 {
     int result;
     int fail_after = 0;
-    AMP_Box_p box;
-    AMP_Error_p error;
+    AMP_Box_T *box;
+    AMP_Error_T *error;
 
     box = amp_new_box();
     amp_put_cstring(box, _ERROR, "1");
@@ -1266,16 +1281,16 @@ START_TEST(test__amp_call_success)
     int bufSize;
 
     struct saved_write *write;
-    AMP_Box_p box;
+    AMP_Box_T *box;
     int bytesConsumed;
 
     char cmdToCall[] = "SomeCommand";
 
     /* set up an AMP_Proto and send a command using it */
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
     amp_set_write_handler(proto, save_writes, NULL);
 
-    AMP_Box_p args = amp_new_box();
+    AMP_Box_T *args = amp_new_box();
     amp_put_int(args, "a", 1776);
 
     fail_unless( amp_call(proto, cmdToCall, args, NULL, NULL, &askKey) == 0);
@@ -1348,8 +1363,8 @@ START_TEST(test__amp_cancel__success)
 {
     int ask_key;
     int result;
-    AMP_Box_p args = amp_new_box();
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Box_T *args = amp_new_box();
+    AMP_Proto_T *proto = amp_new_proto();
     struct saved_result *r;
 
     amp_set_write_handler(proto, discarding_write_handler, NULL);
@@ -1391,7 +1406,7 @@ END_TEST
 START_TEST(test__amp_cancel__no_such_key)
 {
     int result;
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
 
     /* try to cancel a call that was never made */
     result = amp_cancel(proto, 42);
@@ -1411,16 +1426,16 @@ START_TEST(test__amp_call_no_answer)
     int bufSize;
 
     struct saved_write *write;
-    AMP_Box_p box;
+    AMP_Box_T *box;
     int bytesConsumed;
 
     char cmdToCall[] = "SomeCommand";
 
     /* set up an AMP_Proto and send a command using it */
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
     amp_set_write_handler(proto, save_writes, (void*)0x1234);
 
-    AMP_Box_p args = amp_new_box();
+    AMP_Box_T *args = amp_new_box();
     amp_put_int(args, "a", 1776);
 
     fail_unless(amp_call_no_answer(proto, cmdToCall, args) == 0);
@@ -1491,10 +1506,10 @@ START_TEST(test__amp_call_no_ask_key)
      * key is used */
 
     /* set up an AMP_Proto and send a command using it */
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
     amp_set_write_handler(proto, discarding_write_handler, NULL);
 
-    AMP_Box_p args = amp_new_box();
+    AMP_Box_T *args = amp_new_box();
     amp_put_int(args, "a", 1776);
 
     /* no crash */
@@ -1514,16 +1529,16 @@ START_TEST(test__amp_call__max_ask_key)
     long long writtenAskKey;
 
     struct saved_write *write;
-    AMP_Box_p box;
+    AMP_Box_T *box;
     int bytesConsumed;
 
     char cmdToCall[] = "SomeCommand";
 
     /* set up an AMP_Proto and send a command using it */
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Proto_T *proto = amp_new_proto();
     amp_set_write_handler(proto, save_writes, NULL);
 
-    AMP_Box_p args = amp_new_box();
+    AMP_Box_T *args = amp_new_box();
     amp_put_int(args, "a", 1776);
 
     /* poke the private last_ask_key variable so that the next key used
@@ -1571,10 +1586,10 @@ END_TEST
 START_TEST(test__answer_key_max)
 {
     /* test that we can parse an _answer key == UINT_MAX */
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     amp_put_long_long(box, ANSWER, UINT_MAX);
 
-    AMP_Response_p resp;
+    AMP_Response_T *resp;
     fail_if(_amp_new_response_from_box(box, &resp));
 
     fail_unless(resp->answer_key == UINT_MAX);
@@ -1591,9 +1606,9 @@ START_TEST(test_amp_respond)
     unsigned char *buf;
     int buf_len;
 
-    AMP_Request_p req;
-    AMP_Proto_p proto = amp_new_proto();
-    AMP_Box_p resp_args = amp_new_box();
+    AMP_Request_T *req;
+    AMP_Proto_T *proto = amp_new_proto();
+    AMP_Box_T *resp_args = amp_new_box();
 
     amp_set_write_handler(proto, save_writes, NULL);
 
@@ -1619,7 +1634,7 @@ START_TEST(test_amp_respond)
     fail_unless(write->proto == proto);
 
     /* parse the written bytes as an AMP_Box and make sure it looks right */
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     fail_unless( amp_parse_box(proto, box, &bytesConsumed,
                                write->chunk->value,
                                write->chunk->size) );
@@ -1693,8 +1708,8 @@ int num_chunks_equal_tests = (sizeof(chunks_equal_cases) /
 START_TEST(test__amp_chunks_equal)
 {
     struct chunks_equal_case c = chunks_equal_cases[_i];
-    AMP_Chunk_p chunk1  = amp_chunk_for_buffer(c.buf1, c.bufSize1);
-    AMP_Chunk_p chunk2  = amp_chunk_for_buffer(c.buf2, c.bufSize2);
+    AMP_Chunk_T *chunk1  = amp_chunk_for_buffer(c.buf1, c.bufSize1);
+    AMP_Chunk_T *chunk2  = amp_chunk_for_buffer(c.buf2, c.bufSize2);
     fail_unless(amp_chunks_equal(chunk1, chunk2) == c.expectedResult);
 
     amp_free_chunk(chunk1);
@@ -1705,8 +1720,8 @@ END_TEST
 
 START_TEST(test__amp_reset_proto)
 {
-    AMP_Box_p gotBox;
-    AMP_Proto_p proto = amp_new_proto();
+    AMP_Box_T *gotBox;
+    AMP_Proto_T *proto = amp_new_proto();
     proto->dispatch_box = save_box;
 
     /* Cycle through all of the parsing states of an
@@ -1717,7 +1732,7 @@ START_TEST(test__amp_reset_proto)
      * Calling amp_reset_proto() after each parsing run, and verify
      * we're in a clean state */
 
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     amp_put_cstring(box, "foo", "FOO");
     amp_put_cstring(box, "bar", "BAR");
 
@@ -1875,6 +1890,7 @@ int main()
     srunner_add_suite(sr, make_mem_suite());
     srunner_add_suite(sr, make_list_suite());
     srunner_add_suite(sr, make_table_suite());
+    /* srunner_add_suite(sr, make_ampc_suite()); */
     srunner_run_all(sr, CK_NORMAL);
     number_failed = srunner_ntests_failed(sr);
     srunner_free(sr);

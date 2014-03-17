@@ -58,7 +58,7 @@ const char *randomKeys[] = { "Michael Jackson", "Bladerunner",
                              "OpenBSD"};
 int num_randomKeys = (sizeof(randomKeys) / sizeof(char *));
 
-AMP_Box_p test_box;
+AMP_Box_T *test_box;
 
 
 
@@ -158,7 +158,7 @@ START_TEST(test_stress_box_allocation)
 {
     int i, j;
     char key[20];
-    AMP_Box_p boxes[100];
+    AMP_Box_T *boxes[100];
     unsigned char *buf;
     int bufSize;
     const char *testValue = "some test value";
@@ -191,8 +191,8 @@ END_TEST
 
 START_TEST(test__boxes_equal__yes)
 {
-    AMP_Box_p a = amp_new_box();
-    AMP_Box_p b = amp_new_box();
+    AMP_Box_T *a = amp_new_box();
+    AMP_Box_T *b = amp_new_box();
 
     amp_put_cstring(a, "foo", "FOO");
     amp_put_cstring(a, "bar", "BAR");
@@ -210,8 +210,8 @@ END_TEST
 
 START_TEST(test__boxes_equal__diff_length)
 {
-    AMP_Box_p a = amp_new_box();
-    AMP_Box_p b = amp_new_box();
+    AMP_Box_T *a = amp_new_box();
+    AMP_Box_T *b = amp_new_box();
 
     amp_put_cstring(a, "foo", "FOO");
     amp_put_cstring(a, "bar", "BAR");
@@ -230,8 +230,8 @@ END_TEST
 
 START_TEST(test__boxes_equal__diff_keys)
 {
-    AMP_Box_p a = amp_new_box();
-    AMP_Box_p b = amp_new_box();
+    AMP_Box_T *a = amp_new_box();
+    AMP_Box_T *b = amp_new_box();
 
     amp_put_cstring(a, "foo", "FOO");
     amp_put_cstring(a, "BAR", "BAR");
@@ -249,8 +249,8 @@ END_TEST
 
 START_TEST(test__boxes_equal__diff_value_size)
 {
-    AMP_Box_p a = amp_new_box();
-    AMP_Box_p b = amp_new_box();
+    AMP_Box_T *a = amp_new_box();
+    AMP_Box_T *b = amp_new_box();
 
     amp_put_cstring(a, "foo", "FOO");
     amp_put_cstring(a, "bar", "BAR");
@@ -268,8 +268,8 @@ END_TEST
 
 START_TEST(test__boxes_equal__diff_value_content)
 {
-    AMP_Box_p a = amp_new_box();
-    AMP_Box_p b = amp_new_box();
+    AMP_Box_T *a = amp_new_box();
+    AMP_Box_T *b = amp_new_box();
 
     amp_put_cstring(a, "foo", "FOO");
     amp_put_cstring(a, "bar", "BAR");
@@ -293,7 +293,7 @@ unsigned int fake_hash(const void *key1)
 
 START_TEST(test_box_has_key_corner_cases)
 {
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     box->hash = fake_hash; /* use same bucket */
     amp_put_cstring(box, "foo", "FOO");
     amp_put_cstring(box, "bar", "BAR");
@@ -312,7 +312,7 @@ START_TEST(_amp_box_get_buf__key_not_found)
 {
     unsigned char *buf;
     int buf_size, result;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     result = _amp_get_buf(box, "foo", &buf, &buf_size);
     fail_unless( result == AMP_KEY_NOT_FOUND );
     amp_free_box(box);

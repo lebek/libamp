@@ -20,11 +20,11 @@
 #include "dispatch.h"
 
 
-amp_error_t _amp_send_unhandled_command_error(AMP_Proto_p proto, AMP_Request_p req)
+amp_error_t _amp_send_unhandled_command_error(AMP_Proto_T *proto, AMP_Request_T *req)
 {
     /* Fire off an _error box */
 
-    AMP_Box_p box;
+    AMP_Box_T *box;
     unsigned char *buf    = NULL;
     unsigned char *idx;
     unsigned char *packet = NULL;
@@ -85,14 +85,14 @@ error:
     return ret;
 }
 
-int _amp_new_request_from_box(AMP_Box_p box, AMP_Request_p *request)
+int _amp_new_request_from_box(AMP_Box_T *box, AMP_Request_T **request)
 {
     int ret, buf_size;
     unsigned char *buf;
 
-    AMP_Request_p r = NULL;
-    AMP_Chunk_p cmd_name = NULL;
-    AMP_Chunk_p ask_key = NULL; /* default if no _ask key given */
+    AMP_Request_T *r = NULL;
+    AMP_Chunk_T *cmd_name = NULL;
+    AMP_Chunk_T *ask_key = NULL; /* default if no _ask key given */
 
     if ( (r = MALLOC(sizeof(*r))) == NULL)
         return ENOMEM;
@@ -133,11 +133,11 @@ error:
     return ret;
 }
 
-int _amp_new_response_from_box(AMP_Box_p box, AMP_Response_p *response)
+int _amp_new_response_from_box(AMP_Box_T *box, AMP_Response_T **response)
 {
     int ret;
     unsigned int key;
-    AMP_Response_p r;
+    AMP_Response_T *r;
 
     if ( (r = MALLOC(sizeof(*r))) == NULL)
     {
@@ -161,9 +161,9 @@ error:
     return ret;
 }
 
-int _amp_new_result_with_response(AMP_Response_p response, AMP_Result_p *result)
+int _amp_new_result_with_response(AMP_Response_T *response, AMP_Result_T **result)
 {
-    AMP_Result_p r;
+    AMP_Result_T *r;
 
     if ( (r = MALLOC(sizeof(*r))) == NULL)
         return ENOMEM;
@@ -178,14 +178,14 @@ int _amp_new_result_with_response(AMP_Response_p response, AMP_Result_p *result)
 }
 
 
-int _amp_new_error_from_box(AMP_Box_p box, AMP_Error_p *error)
+int _amp_new_error_from_box(AMP_Box_T *box, AMP_Error_T **error)
 {
     int ret, key, buf_size;
     unsigned char *buf;
 
-    AMP_Chunk_p error_code  = NULL;
-    AMP_Chunk_p error_descr = NULL;
-    AMP_Error_p e;
+    AMP_Chunk_T *error_code  = NULL;
+    AMP_Chunk_T *error_descr = NULL;
+    AMP_Error_T *e;
 
     if ( (e = MALLOC(sizeof(*e))) == NULL)
         return ENOMEM;
@@ -234,9 +234,9 @@ error:
     return ret;
 }
 
-int _amp_new_result_with_error(AMP_Error_p error, AMP_Result_p *result)
+int _amp_new_result_with_error(AMP_Error_T *error, AMP_Result_T **result)
 {
-    AMP_Result_p r;
+    AMP_Result_T *r;
 
     if ( (r = MALLOC(sizeof(*r))) == NULL)
         return ENOMEM;
@@ -251,7 +251,7 @@ int _amp_new_result_with_error(AMP_Error_p error, AMP_Result_p *result)
 }
 
 
-int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
+int _amp_process_full_packet(AMP_Proto_T *proto, AMP_Box_T *box)
 {
     /* Dispatch the box that has been accumulated by the given AMP_Proto .
      *
@@ -268,7 +268,7 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
     {
         debug_print("Received %s box.\n", COMMAND);
 
-        AMP_Request_p request;
+        AMP_Request_T *request;
         if ( (ret = _amp_new_request_from_box(box, &request)) != 0)
             return ret;
 
@@ -302,7 +302,7 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
     {
         debug_print("Received %s box.\n", ANSWER);
 
-        AMP_Response_p response;
+        AMP_Response_T *response;
         if ( (ret = _amp_new_response_from_box(box, &response)) != 0)
             return ret;
 
@@ -312,7 +312,7 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
         _AMP_Callback_p cb;
         if ((cb = _amp_pop_callback(proto->outstanding_requests,
                                     response->answer_key)) != NULL) {
-            AMP_Result_p result;
+            AMP_Result_T *result;
             if ( (ret = _amp_new_result_with_response(response, &result)) != 0)
             {
                 amp_free_response(response);
@@ -336,7 +336,7 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
     {
         debug_print("Received %s box.\n", _ERROR);
 
-        AMP_Error_p error;
+        AMP_Error_T *error;
         if ( (ret = _amp_new_error_from_box(box, &error)) != 0)
             return ret;
 
@@ -348,7 +348,7 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
         if ((cb = _amp_pop_callback(proto->outstanding_requests,
                                     error->answer_key)) != NULL) {
 
-            AMP_Result_p result;
+            AMP_Result_T *result;
             if ( (ret = _amp_new_result_with_error(error, &result)) != 0)
             {
                 amp_free_error(error);
@@ -378,10 +378,10 @@ int _amp_process_full_packet(AMP_Proto_p proto, AMP_Box_p box)
     return 0;
 }
 
-AMP_Proto_p amp_new_proto(void)
+AMP_Proto_T *amp_new_proto(void)
 {
-    AMP_Proto_p proto;
-    AMP_Box_p box = NULL;
+    AMP_Proto_T *proto;
+    AMP_Box_T *box = NULL;
     _AMP_Callback_Map_p outstanding_requests = NULL;
     _AMP_Responder_Map_p responders = NULL;
 
@@ -435,7 +435,7 @@ error:
 }
 
 
-void amp_reset_proto(AMP_Proto_p proto)
+void amp_reset_proto(AMP_Proto_T *proto)
 {
     proto->state = KEY_LEN_READ;
 
@@ -454,7 +454,7 @@ void amp_reset_proto(AMP_Proto_p proto)
 }
 
 
-void amp_free_proto(AMP_Proto_p proto)
+void amp_free_proto(AMP_Proto_T *proto)
 {
     /* XXX TODO Hmmm... what about freeing proto->box ?
      * I guess lets do it for now... might need to support
@@ -469,7 +469,7 @@ void amp_free_proto(AMP_Proto_p proto)
     debug_print("Free AMP_Proto at 0x%p\n", proto);
 }
 
-void amp_set_write_handler(AMP_Proto_p proto, write_amp_data_func func,
+void amp_set_write_handler(AMP_Proto_T *proto, write_amp_data_func func,
                            void *write_arg)
 {
     proto->write = func;
@@ -498,7 +498,7 @@ void amp_set_write_handler(AMP_Proto_p proto, write_amp_data_func func,
  * If an error occurs during parsing, proto->error will be set
  * and 0 will be returned.
  */
-int amp_parse_box(AMP_Proto_p proto, AMP_Box_p box, int *bytesConsumed,
+int amp_parse_box(AMP_Proto_T *proto, AMP_Box_T *box, int *bytesConsumed,
                   unsigned char* buf, int len)
 {
     /* Guaranteed to have at least 1 byte in `buf' */
@@ -663,7 +663,7 @@ int amp_parse_box(AMP_Proto_p proto, AMP_Box_p box, int *bytesConsumed,
                  it just means we never found the end of an AMP box */
 }
 
-int amp_consume_bytes(AMP_Proto_p proto, unsigned char* buf, int len)
+int amp_consume_bytes(AMP_Proto_T *proto, unsigned char* buf, int len)
 {
     /* Guaranteed to have at least 1 byte in `buf' */
 
@@ -711,9 +711,9 @@ int amp_consume_bytes(AMP_Proto_p proto, unsigned char* buf, int len)
     return 0;
 }
 
-AMP_Chunk_p amp_new_chunk(int size)
+AMP_Chunk_T *amp_new_chunk(int size)
 {
-    AMP_Chunk_p c;
+    AMP_Chunk_T *c;
     if ( (c = MALLOC(sizeof(*c) + size)) == NULL)
         return NULL;
 
@@ -727,9 +727,9 @@ AMP_Chunk_p amp_new_chunk(int size)
     return c;
 }
 
-AMP_Chunk_p amp_chunk_for_buffer(unsigned char *buf, int size)
+AMP_Chunk_T *amp_chunk_for_buffer(unsigned char *buf, int size)
 {
-    AMP_Chunk_p c;
+    AMP_Chunk_T *c;
     if ( (c = amp_new_chunk(0)) == NULL)
         return NULL;
 
@@ -738,9 +738,9 @@ AMP_Chunk_p amp_chunk_for_buffer(unsigned char *buf, int size)
     return c;
 }
 
-AMP_Chunk_p amp_chunk_copy_buffer(unsigned char *buf, int size)
+AMP_Chunk_T *amp_chunk_copy_buffer(unsigned char *buf, int size)
 {
-    AMP_Chunk_p c;
+    AMP_Chunk_T *c;
     if ( (c = amp_new_chunk(size)) == NULL)
         return NULL;
 
@@ -748,12 +748,12 @@ AMP_Chunk_p amp_chunk_copy_buffer(unsigned char *buf, int size)
     return c;
 }
 
-void amp_free_chunk(AMP_Chunk_p chunk)
+void amp_free_chunk(AMP_Chunk_T *chunk)
 {
     free(chunk);
 }
 
-int amp_chunks_equal(AMP_Chunk_p c1, AMP_Chunk_p c2)
+int amp_chunks_equal(AMP_Chunk_T *c1, AMP_Chunk_T *c2)
 {
     /* Return 1 if equal, otherwise 0 */
     if (c1->size == c2->size && memcmp(c1->value, c2->value, c1->size) == 0)
@@ -762,7 +762,7 @@ int amp_chunks_equal(AMP_Chunk_p c1, AMP_Chunk_p c2)
 }
 
 /* XXX TODO TESTS */
-void amp_free_request(AMP_Request_p request)
+void amp_free_request(AMP_Request_T *request)
 {
     amp_free_chunk(request->command);
 
@@ -779,9 +779,9 @@ void amp_free_request(AMP_Request_p request)
     free(request);
 }
 
-int _amp_new_result_with_cancel(AMP_Result_p *result)
+int _amp_new_result_with_cancel(AMP_Result_T **result)
 {
-    AMP_Result_p r;
+    AMP_Result_T *r;
 
     if ( (r = MALLOC(sizeof(*r))) == NULL)
         return ENOMEM;
@@ -795,14 +795,14 @@ int _amp_new_result_with_cancel(AMP_Result_p *result)
     return 0;
 }
 
-void amp_free_response(AMP_Response_p response)
+void amp_free_response(AMP_Response_T *response)
 {
     amp_free_box(response->args);
     free(response);
 }
 
 /* XXX TODO TESTS */
-void amp_free_error(AMP_Error_p error)
+void amp_free_error(AMP_Error_T *error)
 {
     if (error->error_code != NULL)
         amp_free_chunk(error->error_code);
@@ -812,7 +812,7 @@ void amp_free_error(AMP_Error_p error)
     free(error);
 }
 
-void amp_free_result(AMP_Result_p result)
+void amp_free_result(AMP_Result_T *result)
 {
     if (result->response != NULL)
         amp_free_response(result->response);
@@ -823,7 +823,7 @@ void amp_free_result(AMP_Result_p result)
     free(result);
 }
 
-int amp_next_ask_key(AMP_Proto_p proto)
+int amp_next_ask_key(AMP_Proto_T *proto)
 {
     /* In the case that proto->last_ask_key == UINT_MAX it will wrap around
      * on incrementation. Assume that UINT_MAX is large enough to prevent key
@@ -832,7 +832,7 @@ int amp_next_ask_key(AMP_Proto_p proto)
     return proto->last_ask_key;
 }
 
-int _amp_do_write(AMP_Proto_p proto, unsigned char *buf, int buf_size)
+int _amp_do_write(AMP_Proto_T *proto, unsigned char *buf, int buf_size)
 {
     if (proto->write == NULL)
     {
@@ -844,7 +844,7 @@ int _amp_do_write(AMP_Proto_p proto, unsigned char *buf, int buf_size)
     return proto->write(proto, buf, buf_size, proto->write_arg);
 }
 
-static int _amp_call(AMP_Proto_p proto, const char *command, AMP_Box_p args,
+static int _amp_call(AMP_Proto_T *proto, const char *command, AMP_Box_T *args,
                      amp_callback_func callback, void *callback_arg, unsigned int *ask_key_ret,
                      int requiresAnswer)
 {
@@ -906,13 +906,13 @@ error:
     return ret;
 }
 
-int amp_call(AMP_Proto_p proto, const char *command, AMP_Box_p args,
+int amp_call(AMP_Proto_T *proto, const char *command, AMP_Box_T *args,
              amp_callback_func callback, void *callback_arg, unsigned int *ask_key)
 {
     return _amp_call(proto, command, args, callback, callback_arg, ask_key, 1);
 }
 
-int amp_call_no_answer(AMP_Proto_p proto, const char *command, AMP_Box_p args)
+int amp_call_no_answer(AMP_Proto_T *proto, const char *command, AMP_Box_T *args)
 {
     /* TODO mutates the passed in box by adding special _answer key.
      * But user code might re-use the AMP_Box they passed us here,
@@ -921,13 +921,13 @@ int amp_call_no_answer(AMP_Proto_p proto, const char *command, AMP_Box_p args)
     return _amp_call(proto, command, args, NULL, NULL, NULL, 0);
 }
 
-int amp_cancel(AMP_Proto_p proto, int ask_key)
+int amp_cancel(AMP_Proto_T *proto, int ask_key)
 {
     int ret;
     _AMP_Callback_p cb;
     if ((cb = _amp_pop_callback(proto->outstanding_requests,
                                 ask_key)) != NULL) {
-        AMP_Result_p result;
+        AMP_Result_T *result;
         if ( (ret = _amp_new_result_with_cancel(&result)) != 0)
         {
             /* This would be quit awkward if _amp_new_result_with_cancel
@@ -948,19 +948,19 @@ int amp_cancel(AMP_Proto_p proto, int ask_key)
     return AMP_NO_SUCH_ASK_KEY;
 }
 
-void amp_add_responder(AMP_Proto_p proto, const char *command, void *responder,
+void amp_add_responder(AMP_Proto_T *proto, const char *command, void *responder,
                        void *responder_arg)
 {
     _AMP_Responder_p resp = _amp_new_responder(responder, responder_arg);
     _amp_put_responder(proto->responders, command, resp);
 }
 
-void amp_remove_responder(AMP_Proto_p proto, const char *command)
+void amp_remove_responder(AMP_Proto_T *proto, const char *command)
 {
     _amp_remove_responder(proto->responders, command);
 }
 
-int amp_respond(AMP_Proto_p proto, AMP_Request_p request, AMP_Box_p args)
+int amp_respond(AMP_Proto_T *proto, AMP_Request_T*request, AMP_Box_T *args)
 {
     int ret;
     unsigned char *buf;

@@ -56,11 +56,11 @@ struct Table
 };
 
 
-Table_T Table_new(unsigned int hint,
+Table_T *Table_new(unsigned int hint,
     int cmp(const void *x, const void *y),
     unsigned hash(const void *key))
 {
-    Table_T table;
+    Table_T *table;
     int i;
     static unsigned int primes[] = { 127, 127, 251, 509, 509, 1021, 2053, 4093,
                                      8191, 16381, 32771, 65521, INT_MAX };
@@ -82,7 +82,7 @@ Table_T Table_new(unsigned int hint,
 }
 
 
-void *Table_get(Table_T table, const void *key)
+void *Table_get(Table_T *table, const void *key)
 {
     int i;
     struct binding *p;
@@ -96,11 +96,10 @@ void *Table_get(Table_T table, const void *key)
 }
 
 
-int Table_put(Table_T table, const void *key, void *value)
+int Table_put(Table_T *table, const void *key, void *value)
 {
     int i;
     struct binding *p;
-    void *prev;
     assert(table);
     assert(key);
     i = table->hash(key)%table->size;
@@ -116,9 +115,7 @@ int Table_put(Table_T table, const void *key, void *value)
         p->link = table->buckets[i];
         table->buckets[i] = p;
         table->length++;
-        prev = NULL;
-    } else
-        prev = p->value;
+    }
     p->value = value;
     table->timestamp++;
     /* We have no use-case fore returning `prev' here - so I'm changing
@@ -128,7 +125,7 @@ int Table_put(Table_T table, const void *key, void *value)
 }
 
 
-void *Table_remove(Table_T table, const void *key)
+void *Table_remove(Table_T *table, const void *key)
 {
     int i;
     struct binding **pp;
@@ -150,7 +147,7 @@ void *Table_remove(Table_T table, const void *key)
 }
 
 
-void Table_free(Table_T *table)
+void Table_free(Table_T **table)
 {
     assert(table && *table);
     if ((*table)->length > 0)
@@ -170,14 +167,14 @@ void Table_free(Table_T *table)
     FREE(*table);
 }
 
-int Table_length(Table_T table)
+int Table_length(Table_T *table)
 {
     /* Number of keys stored in table */
     assert(table);
     return table->length;
 }
 
-int Table_num_buckets(Table_T table)
+int Table_num_buckets(Table_T *table)
 {
     assert(table);
     return table->size;
@@ -185,7 +182,7 @@ int Table_num_buckets(Table_T table)
 
 /* CURRENTLY UNUSED FUNCTIONS - UNCOMMENT IF YOU NEED TO MAKE USE OF THEM
 
-void Table_map(Table_T table,
+void Table_map(Table_T *table,
     void apply(const void *key, void **value, void *cl),
     void *cl)
 {
@@ -203,7 +200,7 @@ void Table_map(Table_T table,
         }
 }
 
-void **Table_toArray(Table_T table, void *end)
+void **Table_toArray(Table_T *table, void *end)
 {
     int i, j = 0;
     void **array;

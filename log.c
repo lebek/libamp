@@ -14,6 +14,9 @@
 #include "amp.h"
 
 
+#define MAX_LOG_LEN 256
+
+
 amp_log_handler amp_log_handler_func = NULL;
 
 
@@ -28,12 +31,12 @@ void amp_log(char *fmt, ...)
     if (amp_log_handler_func == NULL)
         return;
 
-    char buf[256];
+    char buf[MAX_LOG_LEN];
     va_list ap;
 
     va_start(ap, fmt);
 
-    vsnprintf(buf, 256, fmt, ap);
+    vsnprintf(buf, MAX_LOG_LEN, fmt, ap);
     amp_log_handler_func(buf);
 
     va_end(ap);

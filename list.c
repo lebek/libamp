@@ -38,7 +38,7 @@
 #include "mem.h"
 #include "list.h"
 
-List_T List_push(List_T list, void *x, int *err)
+List_T *List_push(List_T *list, void *x, int *err)
 {
     /* Reports success or failure in the integer pointed to by `err'.
      * On success `err' is set to 0, and the new head of the list
@@ -47,7 +47,7 @@ List_T List_push(List_T list, void *x, int *err)
      * On failure `err' it is set to ENOMEM, and the List_T pointer
      * which was passed in is returned without any changes being made
      * to the list */
-    List_T p;
+    List_T *p;
     NEW(p);
     if (p == NULL)
     {
@@ -60,11 +60,11 @@ List_T List_push(List_T list, void *x, int *err)
     return p;
 }
 
-List_T List_pop(List_T list, void **x)
+List_T *List_pop(List_T *list, void **x)
 {
     if (list)
     {
-        List_T head = list->rest;
+        List_T *head = list->rest;
         if (x)
             *x = list->first;
         FREE(list);
@@ -74,9 +74,9 @@ List_T List_pop(List_T list, void **x)
         return list;
 }
 
-List_T List_reverse(List_T list)
+List_T *List_reverse(List_T *list)
 {
-    List_T head = NULL, next;
+    List_T *head = NULL, *next;
     for ( ; list; list = next)
     {
         next = list->rest;
@@ -86,7 +86,7 @@ List_T List_reverse(List_T list)
     return head;
 }
 
-int List_length(List_T list)
+int List_length(List_T *list)
 {
     int n;
     for (n = 0; list; list = list->rest)
@@ -94,9 +94,9 @@ int List_length(List_T list)
     return n;
 }
 
-void List_free(List_T *list)
+void List_free(List_T **list)
 {
-    List_T next;
+    List_T *next;
     for ( ; *list; *list = next)
     {
         next = (*list)->rest;
@@ -104,7 +104,7 @@ void List_free(List_T *list)
     }
 }
 
-void List_map(List_T list, void apply(void **x, void *cl), void *cl)
+void List_map(List_T *list, void apply(void **x, void *cl), void *cl)
 {
     for ( ; list; list = list->rest)
         apply(&list->first, cl);
@@ -112,10 +112,10 @@ void List_map(List_T list, void apply(void **x, void *cl), void *cl)
 
 /* CURRENTLY UNUSED FUNCTIONS - UNCOMMENT IF YOU NEED TO MAKE USE OF THEM
 
-List_T List_list(void *x, ...)
+List_T *List_list(void *x, ...)
 {
         va_list ap;
-        List_T list, *p = &list;
+        List_T *list, *p = &list;
         va_start(ap, x);
         for ( ; x; x = va_arg(ap, void *))
         {
@@ -128,18 +128,18 @@ List_T List_list(void *x, ...)
         return list;
 }
 
-List_T List_append(List_T list, List_T tail)
+List_T *List_append(List_T *list, List_T *tail)
 {
-        List_T *p = &list;
+        List_T **p = &list;
         while (*p)
                 p = &(*p)->rest;
         *p = tail;
         return list;
 }
 
-List_T List_copy(List_T list)
+List_T *List_copy(List_T *list)
 {
-        List_T head, *p = &head;
+        List_T *head, *p = &head;
         for ( ; list; list = list->rest)
         {
                 NEW(*p);
@@ -150,7 +150,7 @@ List_T List_copy(List_T list)
         return head;
 }
 
-void **List_toArray(List_T list, void *end)
+void **List_toArray(List_T *list, void *end)
 {
         int i, n = List_length(list);
         void **array = MALLOC((n + 1)*sizeof (*array));

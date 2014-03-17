@@ -31,7 +31,7 @@ START_TEST(test_new_with_size)
 {
     /* A size hint should be respected */
 
-    Table_T table = Table_new(130, cmpatom, hashatom);
+    Table_T *table = Table_new(130, cmpatom, hashatom);
 
     fail_unless( Table_num_buckets(table) == 127 );
 
@@ -44,7 +44,7 @@ START_TEST(test_put_replace)
 {
     /* New values replace old values with the same key. */
 
-    Table_T table = Table_new(0, cmpatom, hashatom);
+    Table_T *table = Table_new(0, cmpatom, hashatom);
 
     Table_put(table, (void*)0x12, (void*)0x34);
     Table_put(table, (void*)0x12, (void*)0x56);
@@ -64,7 +64,7 @@ START_TEST(test_put_in_same_bucket)
      * assert that multiple items can be placed and retreived from
      * the same bucket */
 
-    Table_T table = Table_new(0, cmpatom, hashatom);
+    Table_T *table = Table_new(0, cmpatom, hashatom);
 
     Table_put(table, (void*)0x12, (void*)0x34);
     Table_put(table, (void*)0x56, (void*)0x78);
@@ -84,7 +84,7 @@ START_TEST(test_get)
 {
     /* Table_get() with non-existant key returns NULL */
 
-    Table_T table = Table_new(0, cmpatom, hashatom);
+    Table_T *table = Table_new(0, cmpatom, hashatom);
 
     Table_put(table, (void*)0x12, (void*)0x34);
 

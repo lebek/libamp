@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 # vim: set filetype=python :
-import os, subprocess, re, sys, os.path
+# This means Python 2, knuckle-heads
+import os, subprocess, re, sys, os.path, errno, traceback
+from sys import stdout, stderr
 
 if sys.platform == 'win32':
     # Prefer to find the mingw toolchain first, before MSVC - because MSVC is a
@@ -24,8 +27,8 @@ COMMON_SOURCES = ['amp.c', 'box.c', 'types.c', 'buftoll.c', 'mem.c',
 
 
 # Because BSD puts things here, and maybe other systems too...
-EXTRA_INCLUDE_PATHS = ['/usr/local/include/']
-EXTRA_LIB_PATHS     = ['/usr/local/lib/']
+EXTRA_INCLUDE_PATHS = ['.', '/usr/local/include']
+EXTRA_LIB_PATHS     = ['/usr/local/lib']
 
 for pth in EXTRA_INCLUDE_PATHS:
     if os.path.isdir(pth):
@@ -55,7 +58,7 @@ env.Append(CFLAGS = ['-W',
 #env.Append(CCFLAGS = ['-O2'])
 
 # Debug symbols
-env.Append(CFLAGS = ['-fdump-tree-ssa'])
+#env.Append(CFLAGS = ['-g'])
 
 # Debug prints
 #env.Append(CFLAGS = ['-DDEBUG'])
@@ -75,6 +78,7 @@ if os.environ.get('BUILD_COVERAGE_SUPPORT'):
 TEST_SOURCES = COMMON_SOURCES + ['test_amp.c', 'test_types.c', 'test_box.c',
                                  'test_log.c', 'test_list.c', 'test_table.c',
                                  'test_mem.c', 'test_buftoll.c', 'unix_string.c']
+                                 #'ampc/test_ampc.c', 'ampc/ampc.c']
 
 # Have we been invoke only to compile coverage files only?
 if os.environ.get('COMPILE_COVERAGE'):
@@ -83,7 +87,16 @@ if os.environ.get('COMPILE_COVERAGE'):
     htmlDone = False
 
     cmd = ['geninfo', '.']
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as e:
+        if e.args[0] == errno.ENOENT: # No such file or directory.
+            traceback.print_exc()
+            print >> stderr
+            print >> stderr, "ERROR: Failed to run `geninfo'. Please install the `lcov' package on your system."
+            print >> stderr
+            raise SystemExit(1)
+
     out, err = p.communicate()
     if p.returncode == 0:
         cmd = (['genhtml', '--output-directory', 'html_coverage'] +

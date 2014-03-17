@@ -28,14 +28,14 @@
 /* AMP Type: Bytes (known as String in Twisted) */
 
 /* Store an array of bytes into an AMP_Box. */
-int amp_put_bytes(AMP_Box_p box, const char *key,
+int amp_put_bytes(AMP_Box_T *box, const char *key,
                   const unsigned char *buf, int buf_size)
 {
     return _amp_put_buf(box, key, buf, buf_size);
 }
 
 /* Retrieve an array of bytes from an AMP_Box. */
-int amp_get_bytes(AMP_Box_p box, const char *key,
+int amp_get_bytes(AMP_Box_T *box, const char *key,
                   unsigned char **buf, int *size)
 {
     return _amp_get_buf(box, key, buf, size);
@@ -44,7 +44,7 @@ int amp_get_bytes(AMP_Box_p box, const char *key,
 /* Encode and store an array of bytes given as a NULL-terminated
  * C string. Does not store the extra NULL byte.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_cstring(AMP_Box_p box, const char *key, const char *value)
+int amp_put_cstring(AMP_Box_T *box, const char *key, const char *value)
 {
     return _amp_put_buf(box, key, (unsigned char*)value, strlen(value));
 }
@@ -53,7 +53,7 @@ int amp_put_cstring(AMP_Box_p box, const char *key, const char *value)
 
 /* Encode and store a boolean value into an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_bool(AMP_Box_p box, const char *key, int value)
+int amp_put_bool(AMP_Box_T *box, const char *key, int value)
 {
     const char *buf;
     if (value)
@@ -67,7 +67,7 @@ int amp_put_bool(AMP_Box_p box, const char *key, int value)
 /* Retrieve and decode a boolean value from an AMP_Box.
  * If the boolean is true `value' is set to 1, otherwise it is set to 0.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_get_bool(AMP_Box_p box, const char *key, int *value)
+int amp_get_bool(AMP_Box_T *box, const char *key, int *value)
 {
     int err;
     unsigned char *buf;
@@ -88,7 +88,7 @@ int amp_get_bool(AMP_Box_p box, const char *key, int *value)
 
 /* Encode and store a `long long' into an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_long_long(AMP_Box_p box, const char *key,
+int amp_put_long_long(AMP_Box_T *box, const char *key,
                       long long value)
 {
     /* A ludicrous way to determine the maximum number of base-10 digits
@@ -112,7 +112,7 @@ int amp_put_long_long(AMP_Box_p box, const char *key,
 /* Retrieve and decode a `long long' from an AMP_Box.
  * Stores the decoded integer in to the `long long' pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_get_long_long(AMP_Box_p box, const char *key,
+int amp_get_long_long(AMP_Box_T *box, const char *key,
                       long long *value)
 {
     int err;
@@ -133,7 +133,7 @@ int amp_get_long_long(AMP_Box_p box, const char *key,
 
 /* Encode and store a `int' into an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_int(AMP_Box_p box, const char *key, int value)
+int amp_put_int(AMP_Box_T *box, const char *key, int value)
 {
     /* A ludicrous way to determine the maximum number of base-10 digits
      * required to represent any `int' on this system. */
@@ -155,7 +155,7 @@ int amp_put_int(AMP_Box_p box, const char *key, int value)
 /* Retrieve and decode a `int' from an AMP_Box.
  * Stores the decoded integer in to the `int' pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_get_int(AMP_Box_p box, const char *key, int *value)
+int amp_get_int(AMP_Box_T *box, const char *key, int *value)
 {
     int err;
     unsigned char *buf;
@@ -188,7 +188,7 @@ int amp_get_int(AMP_Box_p box, const char *key, int *value)
 
 /* Encode and store an `unsigned int' into an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_uint(AMP_Box_p box, const char *key, unsigned int value)
+int amp_put_uint(AMP_Box_T *box, const char *key, unsigned int value)
 {
     /* calculate maximum number of base-10 digits required to represent
      * any `unsigned int' on this system. same as for amp_put_int(), minus
@@ -204,7 +204,7 @@ int amp_put_uint(AMP_Box_p box, const char *key, unsigned int value)
 /* Retrieve and decode an `unsigned int' from an AMP_Box.
  * Stores the decoded integer in to the `unsigned int' pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_get_uint(AMP_Box_p box, const char *key, unsigned int *value)
+int amp_get_uint(AMP_Box_T *box, const char *key, unsigned int *value)
 {
     int err;
     unsigned char *buf;
@@ -239,7 +239,7 @@ int amp_get_uint(AMP_Box_p box, const char *key, unsigned int *value)
 
 /* Encode and store a `double' in to an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_double(AMP_Box_p box, const char *key, double value)
+int amp_put_double(AMP_Box_T *box, const char *key, double value)
 {
     unsigned char buf[100];
     int buf_size;
@@ -277,7 +277,7 @@ int amp_put_double(AMP_Box_p box, const char *key, double value)
  * Stores the decoded floating-point number in to the `double'
  * pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_get_double(AMP_Box_p box, const char *key, double *value)
+int amp_get_double(AMP_Box_T *box, const char *key, double *value)
 {
     unsigned char *buf;
     int buf_size;
@@ -419,7 +419,7 @@ int amp_get_double(AMP_Box_p box, const char *key, double *value)
 }
 
 
-/* AMP Type: DateTime (C type `AMP_DateTime_p') */
+/* AMP Type: DateTime (C type `AMP_DateTime_T *') */
 
 
 /* An AMP DateTime representation is always 32 bytes. */
@@ -428,7 +428,7 @@ int amp_get_double(AMP_Box_p box, const char *key, double *value)
 
 /* Encode and store an `AMP_DateTime' in to an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_datetime(AMP_Box_p box, const char *key, AMP_DateTime_p value)
+int amp_put_datetime(AMP_Box_T *box, const char *key, AMP_DateTime_T *value)
 {
     /* snprintf() needs space for an extra \0 even though we don't need it. */
     static uint8_t buf[AMP_DT_SIZE+1];
@@ -484,7 +484,7 @@ int amp_put_datetime(AMP_Box_p box, const char *key, AMP_DateTime_p value)
  * Stores the decoded data in to the `AMP_DateTime' pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. On error,
  * `value' may have been partially filled in before the error was detected. */
-int amp_get_datetime(AMP_Box_p box, const char *key, AMP_DateTime_p value)
+int amp_get_datetime(AMP_Box_T *box, const char *key, AMP_DateTime_T *value)
 {
     int ret;
     uint8_t *buf;

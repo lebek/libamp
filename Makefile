@@ -31,3 +31,11 @@ debug: default
 
 stats:
 	zsh code_stats.zsh
+
+libjansson:
+	# build bundled jansson library?
+	cd jansson && [ ! -f ./configure ] && autoreconf -i || true
+	cd jansson && ./configure --prefix=`pwd`/../tmp-deps
+	cd jansson && make
+	cd jansson && make install
+

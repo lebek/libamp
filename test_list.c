@@ -27,7 +27,7 @@ START_TEST(test_push_with_malloc_failures)
                     random memory */
     void *arg = (void*)0x1234;
 
-    List_T lst = NULL;
+    List_T *lst = NULL;
 
     while (1)
     {
@@ -61,7 +61,7 @@ END_TEST
 START_TEST(test_free)
 {
     int err;
-    List_T lst = NULL;
+    List_T *lst = NULL;
     void *a = NULL;
     void *b = NULL;
 
@@ -95,7 +95,7 @@ void applicant(void **x, void *arg)
 START_TEST(test_map)
 {
     int err;
-    List_T lst = NULL;
+    List_T *lst = NULL;
     void *a = (void*)0x1234;
     void *b = (void*)0x4567;
 
@@ -123,7 +123,7 @@ END_TEST
 START_TEST(test_pop)
 {
     int err;
-    List_T lst = NULL;
+    List_T *lst = NULL;
     void *x;
     void *a = (void*)0x1234;
     void *b = (void*)0x4567;

@@ -90,7 +90,7 @@ static const char AMP_ERROR_UNKNOWN[]   = "UNKNOWN";
 AMP_DLL const char *amp_strerror(amp_error_t amp_error_num);
 
 
-typedef struct AMP_Box *AMP_Box_p;
+typedef struct AMP_Box AMP_Box_T;
 
 
 /* A NULL-terminated chunk of bytes with a known size.
@@ -143,7 +143,7 @@ struct AMP_Chunk
      * which will begin at the address of this variable. */
     unsigned char _buffer_starts_here;
 };
-typedef struct AMP_Chunk *AMP_Chunk_p;
+typedef struct AMP_Chunk AMP_Chunk_T;
 
 
 /* Represents an AMP call from a remote peer.
@@ -151,15 +151,15 @@ typedef struct AMP_Chunk *AMP_Chunk_p;
  * amp_add_responder() API */
 struct AMP_Request
 {
-    AMP_Chunk_p command;
-    AMP_Chunk_p ask_key;
-    AMP_Box_p args;
+    AMP_Chunk_T *command;
+    AMP_Chunk_T *ask_key;
+    AMP_Box_T *args;
 };
-typedef struct AMP_Request *AMP_Request_p;
+typedef struct AMP_Request AMP_Request_T;
 
 
-/* Free an AMP_Request_p */
-void AMP_DLL amp_free_request(AMP_Request_p request);
+/* Free an AMP_Request_T * */
+void AMP_DLL amp_free_request(AMP_Request_T *request);
 
 
 /* Represents an AMP answer emitted by the remote peer
@@ -169,9 +169,9 @@ void AMP_DLL amp_free_request(AMP_Request_p request);
 struct AMP_Response
 {
     unsigned int answer_key;
-    AMP_Box_p args;
+    AMP_Box_T *args;
 };
-typedef struct AMP_Response *AMP_Response_p;
+typedef struct AMP_Response AMP_Response_T;
 
 
 /* Represents an AMP error emitted by the remote peer
@@ -181,10 +181,10 @@ typedef struct AMP_Response *AMP_Response_p;
 struct AMP_Error
 {
     int answer_key;
-    AMP_Chunk_p error_code;
-    AMP_Chunk_p error_descr;
+    AMP_Chunk_T *error_code;
+    AMP_Chunk_T *error_descr;
 };
-typedef struct AMP_Error *AMP_Error_p;
+typedef struct AMP_Error AMP_Error_T;
 
 
 enum amp_result_reason
@@ -208,38 +208,43 @@ typedef struct {
 
     int     utc_offset;  /* Offset from UTC in minutes. */
 
-} AMP_DateTime, *AMP_DateTime_p;
+} AMP_DateTime_T;
 
 
-/* Represents the result of an AMP call - TODO more doc
+/* Represents the result of an AMP call.
  *
- * `reason' indicates the event that triggered this result:
+ * `reason' indicates the type of event that generated this Result:
  *
  * AMP_SUCCESS - received an AMP response for this call, access it
- *               through AMP_Result_p->response.
+ *               through r->response.
  *
  * AMP_ERROR - received an AMP error for this call, access it
- *             through AMP_Result_p->error.
+ *             through r->error.
  *
- * AMP_CANCEL - call was cancelled via amp_cancel() API */
+ * AMP_CANCEL - call was cancelled via amp_cancel() API. No other
+ *              data is available.
+ *
+ * Only one outcome is possible, and only the associated
+ * pointer for that outcome is assured to be valid; the
+ * rest should be assumed to be NULL, and not dereferenced. */
 struct AMP_Result
 {
     enum amp_result_reason reason;
-    AMP_Response_p response;
-    AMP_Error_p error;
+    AMP_Response_T *response;
+    AMP_Error_T *error;
 };
-typedef struct AMP_Result *AMP_Result_p;
+typedef struct AMP_Result AMP_Result_T;
 
 
-/* Free a an AMP_Result_p */
-void AMP_DLL amp_free_result(AMP_Result_p result);
+/* Free a an AMP_Result_T * */
+void AMP_DLL amp_free_result(AMP_Result_T *result);
 
 
-typedef struct AMP_Proto *AMP_Proto_p;
+typedef struct AMP_Proto AMP_Proto_T;
 
 
 /* Prototype for function to handle a new AMP box read off the wire */
-typedef int (*amp_dispatch_box_handler)(AMP_Proto_p proto, AMP_Box_p box);
+typedef int (*amp_dispatch_box_handler)(AMP_Proto_T *proto, AMP_Box_T *box);
 
 
 /* Prototype for responder function to handle an AMP command from the
@@ -257,7 +262,7 @@ typedef int (*amp_dispatch_box_handler)(AMP_Proto_p proto, AMP_Box_p box);
  *
  * `request' should be freed using amp_free_request() before this function
  * exits. */
-typedef void (*amp_responder_func)(AMP_Proto_p proto, AMP_Request_p request,
+typedef void (*amp_responder_func)(AMP_Proto_T *proto, AMP_Request_T *request,
                                    void *responder_arg);
 
 
@@ -271,7 +276,7 @@ typedef void (*amp_responder_func)(AMP_Proto_p proto, AMP_Request_p request,
  *
  * This function should call amp_free_result() on `result' once
  * the answer has been extracted. */
-typedef void (*amp_callback_func)(AMP_Proto_p proto, AMP_Result_p result,
+typedef void (*amp_callback_func)(AMP_Proto_T *proto, AMP_Result_T *result,
                                   void *callback_arg);
 
 
@@ -284,7 +289,7 @@ typedef void (*amp_callback_func)(AMP_Proto_p proto, AMP_Result_p result,
  *
  * Calling cancel on an AMP request for which the callback has already
  * been invoked will do nothing. */
-int AMP_DLL amp_cancel(AMP_Proto_p proto, int ask_key);
+int AMP_DLL amp_cancel(AMP_Proto_T *proto, int ask_key);
 
 
 /* Prototype for function to handle writing data
@@ -299,7 +304,7 @@ int AMP_DLL amp_cancel(AMP_Proto_p proto, int ask_key);
  * finished.
  *
  * Must return 0 on success, or non-zero on error. */
-typedef int(*write_amp_data_func)(AMP_Proto_p proto, unsigned char *buf,
+typedef int(*write_amp_data_func)(AMP_Proto_T *proto, unsigned char *buf,
                                   int buf_size, void *write_arg);
 
 
@@ -307,8 +312,8 @@ typedef int(*write_amp_data_func)(AMP_Proto_p proto, unsigned char *buf,
  *
  * You create one of these for each connection to a remote AMP peer.
  *
- * Returns an AMP_Proto_p on success, or NULL on allocation failure. */
-AMP_Proto_p AMP_DLL amp_new_proto(void);
+ * Returns an AMP_Proto_T * on success, or NULL on allocation failure. */
+AMP_DLL AMP_Proto_T *amp_new_proto(void);
 
 
 /* Reset the parsing state of an AMP Protocol.
@@ -317,12 +322,12 @@ AMP_Proto_p AMP_DLL amp_new_proto(void);
  * will be placed in a state to begin parsing a new box. Any error state
  * associated with the AMP_Proto will be cleared.
  */
-void AMP_DLL amp_reset_proto(AMP_Proto_p proto);
+void AMP_DLL amp_reset_proto(AMP_Proto_T *proto);
 
 
 /* Free an AMP_Proto - call this after you've lost the connection to the
  * remote AMP peer. */
-void AMP_DLL amp_free_proto(AMP_Proto_p proto);
+void AMP_DLL amp_free_proto(AMP_Proto_T *proto);
 
 
 /* Cause the AMP_Proto object to process these raw protocol bytes
@@ -357,11 +362,11 @@ void AMP_DLL amp_free_proto(AMP_Proto_p proto);
  *  with amp_add_responder(). Or in the form of a result-handler
  *  function registered with amp_call().
  */
-int AMP_DLL amp_consume_bytes(AMP_Proto_p proto, unsigned char* buf, int nbytes);
+int AMP_DLL amp_consume_bytes(AMP_Proto_T *proto, unsigned char* buf, int nbytes);
 
 
 /* Set handler function for writing data to the remote AMP peer */
-void AMP_DLL amp_set_write_handler(AMP_Proto_p proto, write_amp_data_func func,
+void AMP_DLL amp_set_write_handler(AMP_Proto_T *proto, write_amp_data_func func,
                                    void *write_arg);
 
 
@@ -376,14 +381,14 @@ void AMP_DLL amp_set_write_handler(AMP_Proto_p proto, write_amp_data_func func,
  * the callback.
  *
  * Returns 0 on success, otherwise an an AMP_* error code. */
-int AMP_DLL amp_call(AMP_Proto_p proto, const char *command, AMP_Box_p args,
+int AMP_DLL amp_call(AMP_Proto_T *proto, const char *command, AMP_Box_T *args,
              amp_callback_func callback, void *callback_arg, unsigned int *ask_key);
 
 
 /* Same as amp_call() except does not request an answer from the remote peer.
  *
  * You will never receive a callback as a result of this call. */
-int AMP_DLL amp_call_no_answer(AMP_Proto_p proto, const char *command, AMP_Box_p args);
+int AMP_DLL amp_call_no_answer(AMP_Proto_T *proto, const char *command, AMP_Box_T *args);
 
 
 /* Register a responder function to handle an AMP command from the
@@ -393,14 +398,14 @@ int AMP_DLL amp_call_no_answer(AMP_Proto_p proto, const char *command, AMP_Box_p
  * `responder' - an `amp_responder_func'
  * `responder_arg' - an application defined argument to be passed
  *                   to the responder */
-void AMP_DLL amp_add_responder(AMP_Proto_p proto, const char *command, void *responder,
+void AMP_DLL amp_add_responder(AMP_Proto_T *proto, const char *command, void *responder,
                                void *responder_arg);
 
 
 /* Remove an AMP responder
  *
  * `command' - the AMP command name */
-void AMP_DLL amp_remove_responder(AMP_Proto_p proto, const char *command);
+void AMP_DLL amp_remove_responder(AMP_Proto_T *proto, const char *command);
 
 
 /* Respond to an AMP request. This function is usually called from within
@@ -415,7 +420,7 @@ void AMP_DLL amp_remove_responder(AMP_Proto_p proto, const char *command);
  *          the special AMP protocol keys, such as _answer.
  *
  * Returns 0 on success, otherwise an AMP_* error code. */
-int AMP_DLL amp_respond(AMP_Proto_p proto, AMP_Request_p request, AMP_Box_p args);
+int AMP_DLL amp_respond(AMP_Proto_T *proto, AMP_Request_T *request, AMP_Box_T *args);
 
 
 /* Respond with an error to an AMP request. This function is usually called
@@ -433,34 +438,34 @@ int AMP_DLL amp_respond(AMP_Proto_p proto, AMP_Request_p request, AMP_Box_p args
  *                 describes the error that occured in some detail.
  *
  * Returns 0 on success, otherwise an an AMP_* error code. */
-int AMP_DLL amp_respond_error(AMP_Proto_p proto, AMP_Request_p request,
+int AMP_DLL amp_respond_error(AMP_Proto_T *proto, AMP_Request_T *request,
                               char *error, char *description);
 
 
 /* Allocate a new AMP_Box (using default values for the internal hash table.)
  *
- * Returns an AMP_Box_p on success, or NULL on allocation failure. */
-AMP_Box_p AMP_DLL amp_new_box(void);
+ * Returns an AMP_Box_T * on success, or NULL on allocation failure. */
+AMP_DLL AMP_Box_T * amp_new_box(void);
 
 
 /* free() all memory associated with the AMP_Box */
-void AMP_DLL amp_free_box(AMP_Box_p box);
+void AMP_DLL amp_free_box(AMP_Box_T *box);
 
 
 /* 1 if it has the key, or 0 if not */
-int AMP_DLL amp_has_key(AMP_Box_p box, const char *key);
+int AMP_DLL amp_has_key(AMP_Box_T *box, const char *key);
 
 
 /* 1 if boxes are equal, or 0 if not */
-int AMP_DLL amp_boxes_equal(AMP_Box_p box, AMP_Box_p box2);
+int AMP_DLL amp_boxes_equal(AMP_Box_T *box, AMP_Box_T *box2);
 
 
 /* Number of key/value pairs in the AMP_Box */
-int AMP_DLL amp_num_keys(AMP_Box_p box);
+int AMP_DLL amp_num_keys(AMP_Box_T *box);
 
 
 /* Delete a key/value pair from the AMP_Box */
-int AMP_DLL amp_del_key(AMP_Box_p box, const char *key);
+int AMP_DLL amp_del_key(AMP_Box_T *box, const char *key);
 
 
 /* Logging functions */
@@ -545,7 +550,7 @@ void AMP_DLL amp_stderr_logger(char *message);
  *
  * Do not free() the buffer as it will be automatically free()'ed
  * when the AMP_Box is free()ed using amp_free_box() */
-int AMP_DLL amp_get_bytes(AMP_Box_p box, const char *key, unsigned char **buf, int *size);
+int AMP_DLL amp_get_bytes(AMP_Box_T *box, const char *key, unsigned char **buf, int *size);
 
 
 /* Store a buffer of bytes in to the AMP_Box.
@@ -553,78 +558,78 @@ int AMP_DLL amp_get_bytes(AMP_Box_p box, const char *key, unsigned char **buf, i
  * This makes a copy of the passed in key, and buffer, and takes
  * ownership of these copies. Thus they will be free()ed automatically
  * when the the AMP_Box is free()ed with amp_free_box() */
-int AMP_DLL amp_put_bytes(AMP_Box_p box, const char *key, const unsigned char *buf, int size);
+int AMP_DLL amp_put_bytes(AMP_Box_T *box, const char *key, const unsigned char *buf, int size);
 
 
 /* Encode and store a buffer of bytes given as a NULL-terminated
  * C string. Does not store the extra NULL byte. */
-int AMP_DLL amp_put_cstring(AMP_Box_p box, const char *key, const char *value);
+int AMP_DLL amp_put_cstring(AMP_Box_T *box, const char *key, const char *value);
 
 
 /* AMP Type: Integer (C type `long long') */
 
 /* get a `long long' from a value in an AMP box and store it in
  * the variable pointed to by `value' */
-int AMP_DLL amp_get_long_long(AMP_Box_p box, const char *key, long long *value);
+int AMP_DLL amp_get_long_long(AMP_Box_T *box, const char *key, long long *value);
 
 
 /* put a `long long' value in to an AMP box. */
-int AMP_DLL amp_put_long_long(AMP_Box_p box, const char *key, long long value);
+int AMP_DLL amp_put_long_long(AMP_Box_T *box, const char *key, long long value);
 
 
 /* AMP Type: Integer (C type `int') */
 
 /* Retrieve and decode a `int' from an AMP_Box. */
-int AMP_DLL amp_get_int(AMP_Box_p box, const char *key, int *value);
+int AMP_DLL amp_get_int(AMP_Box_T *box, const char *key, int *value);
 
 
 /* Encode and store a `int' into an AMP_Box. */
-int AMP_DLL amp_put_int(AMP_Box_p box, const char *key, int value);
+int AMP_DLL amp_put_int(AMP_Box_T *box, const char *key, int value);
 
 
 /* AMP Type: Unsigned Integer (C type `unsigned int') */
 
 /* Retrieve and decode an `unsigned int' from an AMP_Box. */
-int AMP_DLL amp_get_uint(AMP_Box_p box, const char *key, unsigned int *value);
+int AMP_DLL amp_get_uint(AMP_Box_T *box, const char *key, unsigned int *value);
 
 
 /* Encode and store an `unsigned int' into an AMP_Box. */
-int AMP_DLL amp_put_uint(AMP_Box_p box, const char *key, unsigned int value);
+int AMP_DLL amp_put_uint(AMP_Box_T *box, const char *key, unsigned int value);
 
 
 /* AMP Type: Float (C type `double') */
 
 /* store a `double' value in to the double pointed to by `value' */
-int AMP_DLL amp_get_double(AMP_Box_p box, const char *key, double *value);
+int AMP_DLL amp_get_double(AMP_Box_T *box, const char *key, double *value);
 
 
 /* put a `double' value in to an AMP box. */
-int AMP_DLL amp_put_double(AMP_Box_p box, const char *key, double value);
+int AMP_DLL amp_put_double(AMP_Box_T *box, const char *key, double value);
 
 
 /* AMP Type: Boolean (C type `int') */
 
 /* get a `bool' (int) from a value in an AMP box and store it in
  * the variable pointed to by `value' */
-int AMP_DLL amp_get_bool(AMP_Box_p box, const char *key, int *value);
+int AMP_DLL amp_get_bool(AMP_Box_T *box, const char *key, int *value);
 
 
 /* put a `bool' (int) into an AMP box */
-int AMP_DLL amp_put_bool(AMP_Box_p box, const char *key, int value);
+int AMP_DLL amp_put_bool(AMP_Box_T *box, const char *key, int value);
 
 
-/* AMP Type: DateTime (C type `AMP_DateTime_p') */
+/* AMP Type: DateTime (C type `AMP_DateTime_T *') */
 
 /* Encode and store an `AMP_DateTime' in to an AMP_Box.
  * Returns 0 on success, or an AMP_* error code on failure. */
-int amp_put_datetime(AMP_Box_p box, const char *key, AMP_DateTime_p value);
+int amp_put_datetime(AMP_Box_T *box, const char *key, AMP_DateTime_T *value);
 
 
 /* Retrieve and decode an `AMP_DateTime' from an AMP_Box.
  * Stores the decoded data in to the `AMP_DateTime' pointed to by `value'.
  * Returns 0 on success, or an AMP_* error code on failure. On error,
  * `value' may have been partially filled in before the error was detected. */
-int amp_get_datetime(AMP_Box_p box, const char *key, AMP_DateTime_p value);
+int amp_get_datetime(AMP_Box_T *box, const char *key, AMP_DateTime_T *value);
 
 
 /* TODO - More function prototypes for other standard AMP data types */

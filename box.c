@@ -71,10 +71,10 @@ static unsigned int hash_string (const void *key)
 }
 
 
-AMP_Box_p amp_new_box(void)
+AMP_Box_T *amp_new_box(void)
 {
 
-    AMP_Box_p box;
+    AMP_Box_T *box;
     int i, size;
     /* In the future a mechanism may be provided for customizing the number
      * of buckets, but I see no pressing need for it right now.
@@ -110,7 +110,7 @@ AMP_Box_p amp_new_box(void)
 }
 
 
-void amp_free_box(AMP_Box_p box)
+void amp_free_box(AMP_Box_T *box)
 {
     /* Free the AMP_Box struct itself
      * along with all the `binding' and `amp_key_value'
@@ -136,7 +136,7 @@ void amp_free_box(AMP_Box_p box)
     free(box);
 }
 
-int amp_num_keys(AMP_Box_p box)
+int amp_num_keys(AMP_Box_T *box)
 {
     return box->length;
 }
@@ -146,7 +146,7 @@ int amp_num_keys(AMP_Box_p box)
  * Frees the memory of the stored key and value data.
  *
  * Returns 0 if the key was found, or -1 if the key was not found */
-int amp_del_key(AMP_Box_p box, const char *key)
+int amp_del_key(AMP_Box_T *box, const char *key)
 {
     int i;
     struct binding *p;
@@ -189,7 +189,7 @@ int amp_del_key(AMP_Box_p box, const char *key)
 }
 
 
-int amp_has_key(AMP_Box_p box, const char *key)
+int amp_has_key(AMP_Box_T *box, const char *key)
 {
     int i;
     struct binding *p;
@@ -203,7 +203,7 @@ int amp_has_key(AMP_Box_p box, const char *key)
     return (p ? 1 : 0);
 }
 
-int amp_boxes_equal(AMP_Box_p box, AMP_Box_p box2)
+int amp_boxes_equal(AMP_Box_T *box, AMP_Box_T *box2)
 {
     struct binding *p;
     unsigned char *buf;
@@ -237,7 +237,7 @@ int amp_boxes_equal(AMP_Box_p box, AMP_Box_p box2)
 
 /* Store a key and an already-encoded value (buffer) in to the
  * box (hash table) */
-int _amp_put_buf(AMP_Box_p box, const char *key,
+int _amp_put_buf(AMP_Box_T *box, const char *key,
                  const unsigned char *buf, int buf_size)
 {
     int i;
@@ -323,7 +323,7 @@ int _amp_put_buf(AMP_Box_p box, const char *key,
 }
 
 
-int _amp_get_buf(AMP_Box_p box, const char *key,
+int _amp_get_buf(AMP_Box_T *box, const char *key,
                  unsigned char **buf, int *size)
 {
     int i;
@@ -352,7 +352,7 @@ int _amp_get_buf(AMP_Box_p box, const char *key,
 
 /* some places we use `size' for buffer size pointer, other places
  * `buf_size', we should choose one and a use it everywhere */
-int amp_serialize_box(AMP_Box_p box, unsigned char **buf_p, int *size_p)
+int amp_serialize_box(AMP_Box_T *box, unsigned char **buf_p, int *size_p)
 {
     int i;
     int val_len, key_len;

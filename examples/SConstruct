@@ -1,0 +1,76 @@
+# vim: set filetype=python :
+import os, sys
+
+if sys.platform == 'win32':
+    # Prefer to find the mingw toolchain first, before MSVC - because MSVC is a
+    # pathetic toy and we don't support it.
+    env = Environment(tools=['mingw'])
+else:
+    env = Environment()
+
+# Respect common environment variables that users may want to set
+IMPORTED_VARS = ['CC', 'CFLAGS', 'CPPFLAGS', 'CCFLAGS']
+for var in IMPORTED_VARS:
+    value = os.environ.get(var)
+    if value: env[var] = value
+env.Append(LINKFLAGS=Split(os.environ.get('LDFLAGS')))
+
+COMMON_LIBS = ['amp']
+if sys.platform == 'win32':
+    # socket lib
+    COMMON_LIBS.append('ws2_32')
+
+COMMON_SOURCES = ['strtonum.c', 'common.c']
+
+SUMCLIENT_SOURCES      = ['sumclient.c', 'net_utils.c'] + COMMON_SOURCES
+BENCHCLIENT_SOURCES    = ['benchclient.c', 'net_utils.c', 'time_utils.c'] + \
+                          COMMON_SOURCES
+ASYNCSERVER_SOURCES    = ['asyncserver.c'] + COMMON_SOURCES
+
+env.Append(CPPPATH = ['/usr/local/include/'])
+env.Append(LIBPATH = ['/usr/local/lib/'])
+
+# Where my libevent2 is installed...
+env.Append(CPPPATH = ['/home/teratorn/altsys/include/'])
+env.Append(LIBPATH = ['/home/teratorn/altsys/lib/'])
+
+# ...and mine...
+env.Append(CPPPATH = ['/opt/local/include/'])
+env.Append(LIBPATH = ['/opt/local/lib/'])
+
+env.Append(CPPPATH = ['..'])
+env.Append(LIBPATH = ['..'])
+
+# Strict compilation
+#env.Append(CFLAGS = ['-Wall', '-Wstrict-prototypes', '-ansi', '-pedantic'])
+
+# Optimisation
+#env.Append(CCFLAGS = ['-O2'])
+
+# Debug symbols
+#env.Append(CFLAGS = ['-g'])
+
+# Debug prints
+#env.Append(CFLAGS = ['-DDEBUG'])
+
+
+#
+# Build targets
+#
+
+
+# Target: `sumclient' executable.
+env.Program('sumclient', SUMCLIENT_SOURCES, LIBS=COMMON_LIBS)
+
+
+# Target: `benchclient' executable.
+env3 = env.Clone()
+env3['OBJPREFIX'] = 'bench-' # avoid object file conflicts
+env3.Program('benchclient', BENCHCLIENT_SOURCES, LIBS=COMMON_LIBS)
+
+
+# Target: `asyncserver' executable.
+env2 = env.Clone()
+env2['OBJPREFIX'] = 'async-' # avoid object file conflicts
+env2.Program('asyncserver', ASYNCSERVER_SOURCES, LIBS=COMMON_LIBS+['event'])
+
