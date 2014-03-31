@@ -236,7 +236,7 @@ struct AMP_Result
 typedef struct AMP_Result AMP_Result_T;
 
 
-/* Free a an AMP_Result_T * */
+/* Free an AMP_Result_T * */
 void AMP_DLL amp_free_result(AMP_Result_T *result);
 
 

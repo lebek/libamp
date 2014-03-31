@@ -47,7 +47,7 @@ void usage()
     exit(1);
 }
 
-void sum_responder(AMP_Proto_p proto, AMP_Request_p req,
+void sum_responder(AMP_Proto_T proto, AMP_Request_T req,
                    void *responder_arg)
 {
     debug_print("Got command request: %s\n", req->command->value);
