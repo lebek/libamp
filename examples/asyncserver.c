@@ -105,12 +105,13 @@ error:
 /* Called by libamp to send data to the AMP peer */
 int do_write(AMP_Proto_T p, unsigned char *buf, int bufSize, void *write_arg)
 {
-    debug_print("%s\n", "do_write()");
+    debug_print("%s\n", "do_write()1");
     struct bufferevent *bev = (struct bufferevent *)write_arg;
-
+    debug_print("%s,%d\n", "do_write()2", bufSize);
     bufferevent_write(bev, buf, bufSize);
-
+    debug_print("%s\n", "do_write()3");
     free(buf);
+    debug_print("%s\n", "do_write()4");
     return 0;
 }
 
