@@ -27,7 +27,8 @@ valgrind: default
 	CK_FORK=no valgrind --leak-check=full ./test_amp
 
 debug: default
-	CK_FORK=no gdb --args ./test_amp
+	scons -Q debug=1
+	#CK_FORK=no gdb --args ./test_amp
 
 stats:
 	zsh code_stats.zsh
