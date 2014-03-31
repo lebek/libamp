@@ -26,3 +26,6 @@
 .sconsign.dblite
 *.os
 test_amp
+asyncserver
+benchclient
+sumclient

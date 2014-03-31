@@ -27,6 +27,8 @@
 
 /* libamp */
 #include <amp.h>
+// incomplete type on AMP_Proto_T requires this...
+#include <amp_internal.h>
 
 /* libevent */
 #include <event2/event.h>
@@ -47,7 +49,7 @@ void usage()
     exit(1);
 }
 
-void sum_responder(AMP_Proto_T proto, AMP_Request_T req,
+void sum_responder(AMP_Proto_T *proto, AMP_Request_T *req,
                    void *responder_arg)
 {
     debug_print("Got command request: %s\n", req->command->value);
@@ -57,7 +59,7 @@ void sum_responder(AMP_Proto_T proto, AMP_Request_T req,
      * instead of requiring the return value of amp_* functions to be
      * capture for error handling. */
 
-    AMP_Box_T answer = NULL;
+    AMP_Box_T *answer = NULL;
     int ret;
     long long a, b, total;
 
@@ -123,7 +125,7 @@ void conn_readcb(struct bufferevent *bev, void *state)
     int bytesRead;
     int ret;
 
-    AMP_Proto_T proto = state;
+    AMP_Proto_T *proto = state;
 
     bytesRead = bufferevent_read(bev, buf, 256);
 
@@ -179,7 +181,7 @@ void listener_cb(struct evconnlistener *listener, evutil_socket_t fd,
     }
 
     /* Set up AMP protocol */
-    AMP_Proto_T proto;
+    AMP_Proto_T *proto;
     if ( (proto = amp_new_proto()) == NULL)
     {
         fprintf(stderr, "Couldn't allocate AMP_Proto.\n");
