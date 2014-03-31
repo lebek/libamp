@@ -22,7 +22,7 @@
 *.x86_64
 *.hex
 
-# libamp comiled items
+# libamp compiled items
 .sconsign.dblite
 *.os
 test_amp
