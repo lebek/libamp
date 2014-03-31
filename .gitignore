@@ -21,3 +21,8 @@
 *.i*86
 *.x86_64
 *.hex
+
+# libamp comiled items
+.sconsign.dblite
+*.os
+test_amp
