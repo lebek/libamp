@@ -29,3 +29,6 @@ test_amp
 asyncserver
 benchclient
 sumclient
+
+# core dump
+*.dump

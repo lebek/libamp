@@ -3,7 +3,7 @@
 
 int parse_host_port(char *hostport, char *host, int hostLen, int *port);
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #ifdef DEBUG
 #define DEBUG_TEST 1

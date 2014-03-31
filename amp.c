@@ -839,8 +839,8 @@ int _amp_do_write(AMP_Proto_T *proto, unsigned char *buf, int buf_size)
         amp_log("AMP_Proto.write == NULL, missing call to amp_set_write_handler()?");
         free(buf);
         return 1;
-    }
-
+    }    
+    debug_print("_amp_do_write bufSize is %i\n", buf_size);
     return proto->write(proto, buf, buf_size, proto->write_arg);
 }
 
