@@ -26,8 +26,6 @@
 
 /* libamp */
 #include <amp.h>
-// incomplete type on AMP_Proto_T requires this...
-//#include <amp_internal.h>
 
 #include "common.h"
 #include "net_utils.h"
