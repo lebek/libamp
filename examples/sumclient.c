@@ -30,6 +30,7 @@
 /* libamp */
 #include <amp.h>
 
+
 #include "common.h"
 #include "net_utils.h"
 /* strtonum() from OpenBSD */
@@ -58,10 +59,10 @@ void usage()
 
 
 /* forward declaration */
-void do_sum_call(AMP_Proto_p proto, Sum_State_T sum_state);
+void do_sum_call(AMP_Proto_T *proto, Sum_State_T sum_state);
 
 
-void resp_cb(AMP_Proto_p proto, AMP_Result_p result, void *callback_arg)
+void resp_cb(AMP_Proto_T *proto, AMP_Result_T *result, void *callback_arg)
 {
     Sum_State_T sum_state = callback_arg;
     int ret;
@@ -102,10 +103,10 @@ void resp_cb(AMP_Proto_p proto, AMP_Result_p result, void *callback_arg)
     }
 }
 
-void do_sum_call(AMP_Proto_p proto, Sum_State_T sum_state)
+void do_sum_call(AMP_Proto_T *proto, Sum_State_T sum_state)
 {
     int ret;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     amp_put_long_long(box, "a", sum_state->operands[sum_state->idx]);
     amp_put_long_long(box, "b", sum_state->operands[sum_state->idx+1]);
 
@@ -120,7 +121,7 @@ void do_sum_call(AMP_Proto_p proto, Sum_State_T sum_state)
     }
 }
 
-int do_write(AMP_Proto_p proto, unsigned char *buf, int bufSize, void *write_arg)
+int do_write(AMP_Proto_T *proto, unsigned char *buf, int bufSize, void *write_arg)
 {
     send(*(int *)write_arg, buf, bufSize, 0);
     return 0;
@@ -190,7 +191,7 @@ int main(int argc, char *argv[])
 
     /* Done connecting... set up AMP Protocol */
 
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     if ( (proto = amp_new_proto()) == NULL)
     {
         fprintf(stderr, "Couldn't allocate AMP_Proto.\n");

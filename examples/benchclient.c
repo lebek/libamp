@@ -51,9 +51,9 @@ typedef struct {
 } *Bench_State_T;
 
 /* forward declaration */
-void do_sum_call(AMP_Proto_p proto, Bench_State_T state);
+void do_sum_call(AMP_Proto_T *proto, Bench_State_T *state);
 
-void resp_cb(AMP_Proto_p proto, AMP_Result_p result, void *callback_arg)
+void resp_cb(AMP_Proto_T *proto, AMP_Result_T *result, void *callback_arg)
 {
     Bench_State_T state = callback_arg;
     int error;
@@ -99,10 +99,10 @@ void resp_cb(AMP_Proto_p proto, AMP_Result_p result, void *callback_arg)
     amp_free_result(result);
 }
 
-void do_sum_call(AMP_Proto_p proto, Bench_State_T state)
+void do_sum_call(AMP_Proto_T *proto, Bench_State_T *state)
 {
     int ret;
-    AMP_Box_p box = amp_new_box();
+    AMP_Box_T *box = amp_new_box();
     amp_put_long_long(box, "a", 5);
     amp_put_long_long(box, "b", 7);
 
@@ -114,7 +114,7 @@ void do_sum_call(AMP_Proto_p proto, Bench_State_T state)
     }
 }
 
-int do_write(AMP_Proto_p proto, unsigned char *buf, int bufSize, void *write_arg)
+int do_write(AMP_Proto_T *proto, unsigned char *buf, int bufSize, void *write_arg)
 {
     send(*(int *)write_arg, buf, bufSize, 0);
     return 0;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 
     /* Done connecting... set up AMP Protocol */
 
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     if ( (proto = amp_new_proto()) == NULL)
     {
         fprintf(stderr, "Couldn't allocate AMP_Proto.\n");

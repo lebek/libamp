@@ -47,7 +47,7 @@ void usage()
     exit(1);
 }
 
-void sum_responder(AMP_Proto_p proto, AMP_Request_p req,
+void sum_responder(AMP_Proto_T *proto, AMP_Request_T *req,
                    void *responder_arg)
 {
     debug_print("Got command request: %s\n", req->command->value);
@@ -57,7 +57,7 @@ void sum_responder(AMP_Proto_p proto, AMP_Request_p req,
      * instead of requiring the return value of amp_* functions to be
      * capture for error handling. */
 
-    AMP_Box_p answer = NULL;
+    AMP_Box_T *answer = NULL;
     int ret;
     long long a, b, total;
 
@@ -101,14 +101,15 @@ error:
 
 
 /* Called by libamp to send data to the AMP peer */
-int do_write(AMP_Proto_p p, unsigned char *buf, int bufSize, void *write_arg)
+int do_write(AMP_Proto_T *p, unsigned char *buf, int bufSize, void *write_arg)
 {
-    debug_print("%s\n", "do_write()");
+    debug_print("%s\n", "do_write()1");
     struct bufferevent *bev = (struct bufferevent *)write_arg;
-
+    debug_print("%s bufSize is %i\n", "do_write()2", bufSize);
     bufferevent_write(bev, buf, bufSize);
-
+    debug_print("%s\n", "do_write()3");
     free(buf);
+    debug_print("%s\n", "do_write()4");
     return 0;
 }
 
@@ -123,7 +124,7 @@ void conn_readcb(struct bufferevent *bev, void *state)
     int bytesRead;
     int ret;
 
-    AMP_Proto_p proto = state;
+    AMP_Proto_T *proto = state;
 
     bytesRead = bufferevent_read(bev, buf, 256);
 
@@ -179,7 +180,7 @@ void listener_cb(struct evconnlistener *listener, evutil_socket_t fd,
     }
 
     /* Set up AMP protocol */
-    AMP_Proto_p proto;
+    AMP_Proto_T *proto;
     if ( (proto = amp_new_proto()) == NULL)
     {
         fprintf(stderr, "Couldn't allocate AMP_Proto.\n");

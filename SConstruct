@@ -10,6 +10,11 @@ if sys.platform == 'win32':
     env = Environment(tools=['mingw'])
 else:
     env = Environment()
+    
+debug = ARGUMENTS.get('debug', 0)
+if int(debug):
+    env.Append(CCFLAGS = '-g')
+    env.Append(CFLAGS = ['-DDEBUG'])
 
 # Respect common environment variables that users may want to set
 IMPORTED_VARS = ['CC', 'CFLAGS', 'CPPFLAGS', 'CCFLAGS']
